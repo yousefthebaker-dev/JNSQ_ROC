@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JNSQ Resonant Orbit Calculator</title>
+<style>
+/* ============================================================
+   Layout & Reset
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  background: #1a1c22;
+  color: #d0d4de;
+  min-height: 100vh;
+}
+
+a { color: #7bb3f0; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ============================================================
+   Page Header
+   ============================================================ */
+#page-header {
+  background: #0d0f14;
+  border-bottom: 2px solid #2e6da4;
+  padding: 1.5rem 2rem;
+}
+
+#page-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #c5dcf7;
+  letter-spacing: 0.01em;
+}
+
+#page-header p.subtitle {
+  color: #7a8499;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* ============================================================
+   Main Grid
+   ============================================================ */
+#main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 3rem;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* ============================================================
+   Input Panel
+   ============================================================ */
+#controls {
+  background: #21242e;
+  border: 1px solid #2d3245;
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+}
+
+#controls h2 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #5a7fa8;
+  margin-bottom: 1.1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #2d3245;
+}
+
+.field {
+  margin-bottom: 1rem;
+}
+
+.field label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #8a99b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.3rem;
+}
+
+.field select,
+.field input[type="number"] {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  background: #151720;
+  border: 1px solid #354060;
+  border-radius: 4px;
+  color: #d0d4de;
+  font-size: 0.95rem;
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.field select:focus,
+.field input[type="number"]:focus {
+  outline: none;
+  border-color: #2e6da4;
+}
+
+.field .hint {
+  font-size: 0.72rem;
+  color: #505870;
+  margin-top: 0.25rem;
+}
+
+.field .hint.warn {
+  color: #c9824a;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+#btn-calculate {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: #1d4f7c;
+  border: 1px solid #2e6da4;
+  border-radius: 4px;
+  color: #c5dcf7;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+#btn-calculate:hover {
+  background: #2563a0;
+  border-color: #4a90d0;
+}
+
+#btn-calculate:active {
+  background: #154070;
+}
+
+/* ============================================================
+   Body Info Card
+   ============================================================ */
+#body-info {
+  margin-top: 1.25rem;
+  padding: 0.85rem 1rem;
+  background: #191c27;
+  border: 1px solid #2d3245;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #6a7a9a;
+}
+
+#body-info h3 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #4a6080;
+  margin-bottom: 0.5rem;
+}
+
+.bi-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.15rem 0;
+  border-bottom: 1px solid #232840;
+}
+
+.bi-row:last-child { border-bottom: none; }
+.bi-label { color: #505870; }
+.bi-value { color: #8ca0c0; font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   Results Panel
+   ============================================================ */
+#results {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.result-section {
+  background: #21242e;
+  border: 1px solid #2d3245;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.result-section h2 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #5a7fa8;
+  padding: 0.7rem 1.25rem;
+  background: #1a1d26;
+  border-bottom: 1px solid #2d3245;
+}
+
+/* orbit comparison table */
+.orbit-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.orbit-table th {
+  padding: 0.5rem 1rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #505870;
+  background: #1e2130;
+  text-align: right;
+  border-bottom: 1px solid #2a2e40;
+}
+
+.orbit-table th:first-child { text-align: left; }
+
+.orbit-table td {
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid #252840;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-size: 0.875rem;
+}
+
+.orbit-table td:first-child {
+  text-align: left;
+  color: #8a99b8;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.orbit-table tr:last-child td { border-bottom: none; }
+
+.orbit-table .col-target  { color: #7bbb96; }
+.orbit-table .col-inner   { color: #7bb3f0; }
+.orbit-table .col-outer   { color: #c09af0; }
+
+.orbit-table th.col-target  { color: #5a9970; }
+.orbit-table th.col-inner   { color: #4a80c0; }
+.orbit-table th.col-outer   { color: #8870c0; }
+
+/* deployment steps */
+.steps {
+  padding: 1rem 1.25rem;
+}
+
+.step {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #252840;
+  font-size: 0.875rem;
+}
+
+.step:last-child { border-bottom: none; }
+
+.step-num {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: #1d3a5a;
+  border: 1px solid #2e5a88;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #7bb3f0;
+  margin-top: 0.05rem;
+}
+
+.step-text { color: #a0aac0; }
+.step-text strong { color: #c5dcf7; }
+
+/* synchronous orbit info */
+.sync-info {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  color: #8090a8;
+}
+
+.sync-info .sync-val {
+  color: #e0c87a;
+  font-variant-numeric: tabular-nums;
+}
+
+.sync-info .sync-warn {
+  color: #c07050;
+  font-style: italic;
+}
+
+/* placeholder / error */
+#placeholder {
+  background: #21242e;
+  border: 1px solid #2d3245;
+  border-radius: 6px;
+  padding: 2.5rem 2rem;
+  color: #404860;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+#error-msg {
+  background: #2e1a1a;
+  border: 1px solid #6a3030;
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  color: #d08080;
+  font-size: 0.875rem;
+  display: none;
+}
+
+/* ============================================================
+   Credits & Footer
+   ============================================================ */
+#credits {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 2rem 2rem;
+  font-size: 0.78rem;
+  color: #404860;
+  line-height: 1.7;
+  border-top: 1px solid #22263a;
+}
+
+#credits h3 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #3a4560;
+  margin-bottom: 0.4rem;
+  padding-top: 1rem;
+}
+
+#credits a { color: #4a6888; }
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 760px) {
+  #main {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  #page-header { padding: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<header id="page-header">
+  <h1>JNSQ Resonant Orbit Calculator</h1>
+  <p class="subtitle">Deploy satellite constellations in the Je Ne Sais Quoi planet pack</p>
+</header>
+
+<div id="main">
+
+  <!-- ── Input Panel ───────────────────────────────────────── -->
+  <aside id="controls">
+    <h2>Setup</h2>
+
+    <div class="field">
+      <label for="sel-body">Parent Body</label>
+      <select id="sel-body" onchange="onBodyChange()">
+        <optgroup label="Kerbol System">
+          <option value="Kerbol">Kerbol (Sun)</option>
+        </optgroup>
+        <optgroup label="Inner Planets">
+          <option value="Moho">Moho</option>
+          <option value="Eve">Eve</option>
+          <option value="Gilly">Gilly (Eve)</option>
+          <option value="Kerbin" selected>Kerbin</option>
+          <option value="Mun">Mun (Kerbin)</option>
+          <option value="Minmus">Minmus (Kerbin)</option>
+          <option value="Duna">Duna</option>
+          <option value="Ike">Ike (Duna)</option>
+          <option value="Edna">Edna</option>
+          <option value="Dak">Dak (Edna)</option>
+          <option value="Dres">Dres</option>
+        </optgroup>
+        <optgroup label="Jool System">
+          <option value="Jool">Jool</option>
+          <option value="Laythe">Laythe (Jool)</option>
+          <option value="Vall">Vall (Jool)</option>
+          <option value="Tylo">Tylo (Jool)</option>
+          <option value="Bop">Bop (Jool)</option>
+          <option value="Pol">Pol (Jool)</option>
+        </optgroup>
+        <optgroup label="Outer Planets">
+          <option value="Hamek">Hamek</option>
+          <option value="Lindor">Lindor</option>
+          <option value="Krel">Krel (Lindor)</option>
+          <option value="Aden">Aden (Lindor)</option>
+          <option value="Huygen">Huygen (Lindor)</option>
+          <option value="Talos">Talos (Lindor)</option>
+          <option value="Eeloo">Eeloo</option>
+          <option value="Tam">Tam (Eeloo)</option>
+          <option value="Celes">Celes (Eeloo)</option>
+          <option value="Nara">Nara</option>
+          <option value="Enon">Enon (Nara)</option>
+          <option value="Prax">Prax (Nara)</option>
+          <option value="Amos">Amos (Nara)</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="inp-count">Number of Satellites</label>
+      <input type="number" id="inp-count" value="3" min="2" max="24" step="1">
+    </div>
+
+    <div class="field">
+      <label for="inp-alt">Target Orbit Altitude (km)</label>
+      <input type="number" id="inp-alt" value="100" min="0" step="10">
+      <div class="hint" id="hint-alt"></div>
+    </div>
+
+    <button id="btn-calculate" onclick="calculate()">Calculate</button>
+
+    <div id="body-info">
+      <h3>Body Parameters</h3>
+      <div class="bi-row"><span class="bi-label">Radius</span>      <span class="bi-value" id="bi-radius">—</span></div>
+      <div class="bi-row"><span class="bi-label">Surface g</span>   <span class="bi-value" id="bi-g">—</span></div>
+      <div class="bi-row"><span class="bi-label">Atmosphere</span>  <span class="bi-value" id="bi-atm">—</span></div>
+      <div class="bi-row"><span class="bi-label">SOI</span>         <span class="bi-value" id="bi-soi">—</span></div>
+      <div class="bi-row"><span class="bi-label">Sync. orbit</span> <span class="bi-value" id="bi-sync">—</span></div>
+    </div>
+  </aside>
+
+  <!-- ── Results Panel ─────────────────────────────────────── -->
+  <section id="results">
+    <div id="error-msg"></div>
+    <div id="placeholder">
+      Select a body and enter a target altitude, then click <strong>Calculate</strong>.
+    </div>
+  </section>
+
+</div><!-- #main -->
+
+<footer id="credits">
+  <h3>Credits &amp; Licences</h3>
+  <p>
+    Orbital calculation method and calculator concept by
+    <a href="https://meyerweb.com/eric/ksp/resonant-orbits/" rel="noopener">Eric A. Meyer</a>
+    (MIT licence), with independent implementation.
+    In-game mod implementation by
+    <a href="https://github.com/linuxgurugamer/ResonantOrbitCalculator" rel="noopener">linuxgurugamer</a>
+    (MIT licence), original concept also from Eric Meyer.
+  </p>
+  <p style="margin-top:0.4rem">
+    Planet data from
+    <a href="https://github.com/Galileo88/JNSQ" rel="noopener">JNSQ by Team Galileo (Galileo88 et al.)</a>,
+    licenced under
+    <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/" rel="noopener">CC BY-NC-ND 3.0</a>.
+    This calculator derives data from JNSQ config files for reference purposes only and is not
+    affiliated with or endorsed by Team Galileo.
+  </p>
+  <p style="margin-top:0.4rem; color:#303550">
+    Kerbal Space Program and related names are trademarks of Take-Two Interactive Software.
+  </p>
+</footer>
+
+<script>
+// ================================================================
+//  JNSQ Body Database
+//  radius      – surface radius (m)
+//  geeASL      – surface gravity (multiples of 9.80665 m/s²)
+//  atm         – atmosphere top (m), 0 = no atmosphere
+//  rotPeriod   – sidereal rotation period (s), 0 = tidally locked
+//  parent      – parent body name, null = primary star
+//  parentGM    – GM of parent body (m³/s²), needed for SOI calc
+//  sma         – semi-major axis around parent (m)
+//
+//  GM is computed: geeASL * 9.80665 * radius²
+// ================================================================
+const G0 = 9.80665; // m/s²
+
+const BODIES = {
+  Kerbol: {
+    radius: 261600000, geeASL: 1.7566, atm: 600000, rotPeriod: 432000,
+    parent: null, sma: 0,
+    // Stock KSP Kerbol GM = 1.1723328e18; confirm via g = GM/r²:
+    // 1.1723e18 / (2.616e8)² = 17.13 m/s² → geeASL = 1.747 ≈ used here
+  },
+  Moho: {
+    radius: 650000, geeASL: 0.29, atm: 0, rotPeriod: 2530758,
+    parent: 'Kerbol', sma: 14522400000,
+  },
+  Eve: {
+    radius: 2050000, geeASL: 1.4, atm: 60000, rotPeriod: 81000,
+    parent: 'Kerbol', sma: 27131000000,
+  },
+  Gilly: {
+    radius: 30000, geeASL: 0.0075, atm: 0, rotPeriod: 0,
+    parent: 'Eve', sma: 86920000,
+  },
+  Kerbin: {
+    radius: 1600000, geeASL: 1.0, atm: 80000, rotPeriod: 43200,
+    parent: 'Kerbol', sma: 37525647898,
+  },
+  Mun: {
+    radius: 400000, geeASL: 0.145, atm: 0, rotPeriod: 0,
+    parent: 'Kerbin', sma: 90960000,
+  },
+  Minmus: {
+    radius: 160000, geeASL: 0.05, atm: 0, rotPeriod: 32400,
+    parent: 'Kerbin', sma: 146970000,
+  },
+  Duna: {
+    radius: 800000, geeASL: 0.34, atm: 70000, rotPeriod: 50400,
+    parent: 'Kerbol', sma: 57189100000,
+  },
+  Ike: {
+    radius: 210000, geeASL: 0.06, atm: 0, rotPeriod: 0,
+    parent: 'Duna', sma: 36680000,
+  },
+  Edna: {
+    radius: 260000, geeASL: 0.08, atm: 0, rotPeriod: 10800,
+    parent: 'Kerbol', sma: 94080000000,
+  },
+  Dak: {
+    radius: 20000, geeASL: 0.008, atm: 0, rotPeriod: 0,
+    parent: 'Edna', sma: 4770000,
+  },
+  Dres: {
+    radius: 360000, geeASL: 0.12, atm: 0, rotPeriod: 16200,
+    parent: 'Kerbol', sma: 112687000000,
+  },
+  Jool: {
+    radius: 14000000, geeASL: 1.04, atm: 500000, rotPeriod: 19800,
+    parent: 'Kerbol', sma: 189765000000,
+  },
+  Laythe: {
+    radius: 1100000, geeASL: 0.58, atm: 75000, rotPeriod: 0,
+    parent: 'Jool', sma: 87640000,
+  },
+  Vall: {
+    radius: 550000, geeASL: 0.18, atm: 0, rotPeriod: 0,
+    parent: 'Jool', sma: 160230000,
+  },
+  Tylo: {
+    radius: 900000, geeASL: 0.32, atm: 0, rotPeriod: 0,
+    parent: 'Jool', sma: 292950000,
+  },
+  Bop: {
+    radius: 190000, geeASL: 0.05, atm: 0, rotPeriod: 0,
+    parent: 'Jool', sma: 582970000,
+  },
+  Pol: {
+    radius: 130000, geeASL: 0.03, atm: 0, rotPeriod: 18000,
+    parent: 'Jool', sma: 739460000,
+  },
+  Hamek: {
+    radius: 450000, geeASL: 0.1, atm: 0, rotPeriod: 14400,
+    parent: 'Kerbol', sma: 527129000000,
+  },
+  Lindor: {
+    radius: 8000000, geeASL: 0.94, atm: 420000, rotPeriod: 25200,
+    parent: 'Kerbol', sma: 359571000000,
+  },
+  Krel: {
+    radius: 150000, geeASL: 0.03, atm: 0, rotPeriod: 0,
+    parent: 'Lindor', sma: 58600000,
+  },
+  Aden: {
+    radius: 300000, geeASL: 0.07, atm: 0, rotPeriod: 0,
+    parent: 'Lindor', sma: 107140000,
+  },
+  Huygen: {
+    radius: 670000, geeASL: 0.15, atm: 180000, rotPeriod: 0,
+    parent: 'Lindor', sma: 187500000,
+  },
+  Talos: {
+    radius: 500000, geeASL: 0.11, atm: 0, rotPeriod: 0,
+    parent: 'Lindor', sma: 575680000,
+  },
+  Eeloo: {
+    radius: 600000, geeASL: 0.15, atm: 75000, rotPeriod: 28800,
+    parent: 'Kerbol', sma: 471171300000,
+  },
+  Tam: {
+    radius: 10000, geeASL: 0.0035, atm: 0, rotPeriod: 0,
+    parent: 'Eeloo', sma: 64670000,
+  },
+  Celes: {
+    radius: 200000, geeASL: 0.04, atm: 0, rotPeriod: 0,
+    parent: 'Eeloo', sma: 31800000,
+  },
+  Nara: {
+    radius: 3600000, geeASL: 1.0, atm: 170000, rotPeriod: 43200,
+    parent: 'Kerbol', sma: 1712000000000,
+  },
+  Enon: {
+    radius: 700000, geeASL: 0.15, atm: 0, rotPeriod: 0,
+    parent: 'Nara', sma: 125980000,
+  },
+  Prax: {
+    radius: 110000, geeASL: 0.02, atm: 0, rotPeriod: 21600,
+    parent: 'Nara', sma: 751900000,
+  },
+  Amos: {
+    radius: 320000, geeASL: 0.06, atm: 0, rotPeriod: 0,
+    parent: 'Nara', sma: 55880000,
+  },
+};
+
+// Compute GM for each body
+for (const name in BODIES) {
+  const b = BODIES[name];
+  b.GM = b.geeASL * G0 * b.radius * b.radius;
+}
+
+// Compute SOI for each body (except Kerbol)
+for (const name in BODIES) {
+  const b = BODIES[name];
+  if (!b.parent) { b.SOI = Infinity; continue; }
+  const parentGM = BODIES[b.parent].GM;
+  b.SOI = b.sma * Math.pow(b.GM / parentGM, 0.4);
+}
+
+// ================================================================
+//  Helpers
+// ================================================================
+function fmtKm(m)   { return (m / 1000).toLocaleString('en-US', { maximumFractionDigits: 1 }) + ' km'; }
+function fmtAlt(m)  { return (m / 1000).toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' km'; }
+function fmtTime(s) {
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sc = Math.floor(s % 60);
+  let parts = [];
+  if (d > 0) parts.push(d + 'd');
+  if (h > 0) parts.push(h + 'h');
+  if (m > 0) parts.push(m + 'm');
+  if (sc > 0 || parts.length === 0) parts.push(sc + 's');
+  return parts.join(' ');
+}
+function fmtg(v) { return v.toFixed(3) + ' g'; }
+
+function orbitalPeriod(GM, sma) {
+  return 2 * Math.PI * Math.sqrt(sma * sma * sma / GM);
+}
+
+function smaFromPeriod(GM, T) {
+  return Math.cbrt(GM * (T / (2 * Math.PI)) * (T / (2 * Math.PI)));
+}
+
+function syncOrbit(body) {
+  if (!body.rotPeriod) return null; // tidally locked / unknown
+  return smaFromPeriod(body.GM, body.rotPeriod);
+}
+
+// ================================================================
+//  UI: update body info sidebar
+// ================================================================
+function onBodyChange() {
+  const name = document.getElementById('sel-body').value;
+  const b = BODIES[name];
+  if (!b) return;
+
+  document.getElementById('bi-radius').textContent = fmtKm(b.radius);
+  document.getElementById('bi-g').textContent      = fmtg(b.geeASL);
+  document.getElementById('bi-atm').textContent    = b.atm > 0 ? fmtAlt(b.atm) : 'none';
+  document.getElementById('bi-soi').textContent    = b.SOI === Infinity
+    ? '∞ (primary star)'
+    : fmtKm(b.SOI);
+
+  const sync = syncOrbit(b);
+  const biSync = document.getElementById('bi-sync');
+  if (sync === null) {
+    biSync.textContent = 'tidally locked';
+  } else {
+    const syncAlt = (sync - b.radius) / 1000;
+    if (syncAlt < 0) {
+      biSync.textContent = 'below surface';
+    } else {
+      biSync.textContent = fmtAlt(sync - b.radius);
+    }
+  }
+
+  // Update altitude hint
+  const minSafe = (b.atm > 0 ? b.atm : 0) + 10000; // 10 km buffer above atm (or 10 km min)
+  const hint = document.getElementById('hint-alt');
+  let hintText = `Minimum safe: ${fmtAlt(minSafe)}`;
+  if (b.SOI !== Infinity) {
+    const maxAlt = (b.SOI * 0.8 - b.radius) / 1000;
+    hintText += ` · SOI limit ~${fmtAlt(b.SOI * 0.8 - b.radius)}`;
+  }
+  hint.textContent = hintText;
+  hint.className = 'hint';
+}
+
+// ================================================================
+//  Main Calculation
+// ================================================================
+function calculate() {
+  const name    = document.getElementById('sel-body').value;
+  const count   = parseInt(document.getElementById('inp-count').value, 10);
+  const altKm   = parseFloat(document.getElementById('inp-alt').value);
+  const b       = BODIES[name];
+
+  const errDiv  = document.getElementById('error-msg');
+  const results = document.getElementById('results');
+
+  errDiv.style.display = 'none';
+
+  // Validate
+  if (!b)                        return showError('Unknown body.');
+  if (isNaN(count) || count < 2) return showError('Number of satellites must be at least 2.');
+  if (isNaN(altKm) || altKm < 0) return showError('Altitude must be a non-negative number.');
+
+  const altM  = altKm * 1000;
+  const r_t   = b.radius + altM;       // target orbit radius
+  const GM    = b.GM;
+
+  // Altitude checks
+  if (altM < b.atm) {
+    return showError(
+      `Altitude ${fmtAlt(altM)} is inside the atmosphere (top: ${fmtAlt(b.atm)}). ` +
+      `Use at least ${fmtAlt(b.atm + 1000)} or more.`
+    );
+  }
+  if (b.SOI !== Infinity && r_t > b.SOI * 0.9) {
+    return showError(
+      `Altitude ${fmtAlt(altM)} is near or beyond the SOI (${fmtKm(b.SOI)}). ` +
+      `Choose an altitude below ~${fmtAlt(b.SOI * 0.85 - b.radius)}.`
+    );
+  }
+
+  // Target orbit
+  const T_target = orbitalPeriod(GM, r_t);
+
+  // Resonant orbits
+  // Inner (below target): carrier completes n-1 orbits while satellite completes n
+  const T_inner  = T_target * (count - 1) / count;
+  const a_inner  = smaFromPeriod(GM, T_inner);
+  // Inner resonant orbit: Ap = r_t, Pe = 2*a_inner - r_t
+  const Ap_inner = r_t;
+  const Pe_inner = 2 * a_inner - r_t;
+
+  // Outer (above target): carrier completes n+1 orbits while satellite completes n
+  const T_outer  = T_target * (count + 1) / count;
+  const a_outer  = smaFromPeriod(GM, T_outer);
+  // Outer resonant orbit: Pe = r_t, Ap = 2*a_outer - r_t
+  const Pe_outer = r_t;
+  const Ap_outer = 2 * a_outer - r_t;
+
+  // Synchronous orbit
+  const sync    = syncOrbit(b);
+  const syncAlt = sync !== null ? sync - b.radius : null;
+
+  // Check Pe above surface + atmosphere
+  const minR = b.radius + b.atm + 1000;
+  const innerOk = Pe_inner >= minR;
+  const outerOk = Ap_outer < (b.SOI !== Infinity ? b.SOI * 0.9 : Infinity);
+
+  // Build output
+  let html = '';
+
+  // --- Orbit comparison table ---
+  html += `
+<div class="result-section">
+  <h2>Orbit Parameters</h2>
+  <table class="orbit-table">
+    <thead>
+      <tr>
+        <th></th>
+        <th class="col-target">Target Orbit</th>
+        <th class="col-inner">Inner Resonant</th>
+        <th class="col-outer">Outer Resonant</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Altitude (Ap)</td>
+        <td class="col-target">${fmtAlt(Ap_inner - b.radius)}</td>
+        <td class="col-inner">${fmtAlt(Ap_inner - b.radius)}</td>
+        <td class="col-outer">${fmtAlt(Ap_outer - b.radius)}</td>
+      </tr>
+      <tr>
+        <td>Altitude (Pe)</td>
+        <td class="col-target">${fmtAlt(r_t - b.radius)}</td>
+        <td class="col-inner">${fmtAlt(Pe_inner - b.radius)}${!innerOk ? ' ⚠' : ''}</td>
+        <td class="col-outer">${fmtAlt(Pe_outer - b.radius)}</td>
+      </tr>
+      <tr>
+        <td>Orbit Period</td>
+        <td class="col-target">${fmtTime(T_target)}</td>
+        <td class="col-inner">${fmtTime(T_inner)}</td>
+        <td class="col-outer">${fmtTime(T_outer)}</td>
+      </tr>
+      <tr>
+        <td>Semi-major Axis</td>
+        <td class="col-target">${fmtKm(r_t)}</td>
+        <td class="col-inner">${fmtKm(a_inner)}</td>
+        <td class="col-outer">${fmtKm(a_outer)}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>`;
+
+  // --- Inner resonant deployment steps ---
+  if (innerOk) {
+    html += `
+<div class="result-section">
+  <h2>Inner Resonant Deployment (${count} satellites)</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text">
+        Circularise the carrier at the <strong>target altitude: ${fmtAlt(altM)}</strong>.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text">
+        Release satellite #1, then burn <em>retrograde</em> to lower the carrier's periapsis to
+        <strong>${fmtAlt(Pe_inner - b.radius)}</strong>,
+        creating an elliptical orbit with period <strong>${fmtTime(T_inner)}</strong>
+        (ratio&nbsp;${count - 1}:${count} with target).
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text">
+        Coast for exactly <strong>one carrier orbit</strong> (${fmtTime(T_inner)}).
+        The carrier returns to apoapsis and the released satellite has advanced
+        <strong>1/${count} of its orbit</strong> ahead.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-text">
+        Burn prograde at apoapsis to re-circularise at ${fmtAlt(altM)}.
+        Release satellite #2 and repeat the retrograde burn.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-text">
+        Repeat steps 3–4 for each remaining satellite.
+        After releasing the last satellite, circularise and your ${count} payloads
+        will be equally spaced (every ${(360 / count).toFixed(1)}°).
+      </div>
+    </div>
+  </div>
+</div>`;
+  } else {
+    html += `
+<div class="result-section">
+  <h2>Inner Resonant Deployment</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">⚠</div>
+      <div class="step-text">
+        The inner resonant periapsis (<strong>${fmtAlt(Pe_inner - b.radius)}</strong>) is
+        ${Pe_inner < b.radius ? 'below the surface' : 'inside the atmosphere'}.
+        Use a higher target altitude or the outer resonant method instead.
+      </div>
+    </div>
+  </div>
+</div>`;
+  }
+
+  // --- Outer resonant deployment steps ---
+  if (outerOk) {
+    html += `
+<div class="result-section">
+  <h2>Outer Resonant Deployment (${count} satellites)</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text">
+        Circularise the carrier at the <strong>target altitude: ${fmtAlt(altM)}</strong>.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text">
+        Release satellite #1, then burn <em>prograde</em> to raise the carrier's apoapsis to
+        <strong>${fmtAlt(Ap_outer - b.radius)}</strong>,
+        creating an elliptical orbit with period <strong>${fmtTime(T_outer)}</strong>
+        (ratio&nbsp;${count + 1}:${count} with target).
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text">
+        Coast for exactly <strong>one carrier orbit</strong> (${fmtTime(T_outer)}).
+        The carrier returns to periapsis and the released satellite has fallen behind
+        <strong>1/${count} of its orbit</strong>.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-text">
+        Burn retrograde at periapsis to re-circularise at ${fmtAlt(altM)}.
+        Release satellite #2 and repeat the prograde burn.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-text">
+        Repeat steps 3–4 for each remaining satellite.
+        After releasing the last satellite, circularise and your ${count} payloads
+        will be equally spaced (every ${(360 / count).toFixed(1)}°).
+      </div>
+    </div>
+  </div>
+</div>`;
+  } else {
+    html += `
+<div class="result-section">
+  <h2>Outer Resonant Deployment</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">⚠</div>
+      <div class="step-text">
+        The outer resonant apoapsis (<strong>${fmtAlt(Ap_outer - b.radius)}</strong>)
+        would exceed 90% of ${name}'s SOI (${fmtKm(b.SOI)}).
+        Use a lower target altitude or the inner resonant method instead.
+      </div>
+    </div>
+  </div>
+</div>`;
+  }
+
+  // --- Synchronous orbit ---
+  if (sync !== null) {
+    html += `
+<div class="result-section">
+  <h2>Synchronous Orbit</h2>
+  <div class="sync-info">`;
+    if (syncAlt < 0) {
+      html += `<span class="sync-warn">The synchronous orbit radius (${fmtKm(sync)}) is below the surface — no stable synchronous orbit exists for ${name}.</span>`;
+    } else if (b.SOI !== Infinity && sync > b.SOI) {
+      html += `<span class="sync-warn">The synchronous orbit radius (${fmtKm(sync)}) is beyond the SOI — no stable synchronous orbit exists for ${name}.</span>`;
+    } else {
+      html += `Synchronous orbit altitude: <span class="sync-val">${fmtAlt(syncAlt)}</span>
+               &nbsp;·&nbsp; radius: <span class="sync-val">${fmtKm(sync)}</span>
+               &nbsp;·&nbsp; period: <span class="sync-val">${fmtTime(b.rotPeriod)}</span>`;
+    }
+    html += `</div>
+</div>`;
+  }
+
+  // Render
+  document.getElementById('placeholder').style.display = 'none';
+  results.innerHTML = '<div id="error-msg" style="display:none"></div>' + html;
+}
+
+function showError(msg) {
+  const errDiv = document.getElementById('error-msg');
+  errDiv.textContent = msg;
+  errDiv.style.display = 'block';
+  document.getElementById('placeholder').style.display = 'none';
+}
+
+// Initialise sidebar on load
+window.addEventListener('DOMContentLoaded', onBodyChange);
+</script>
+
+</body>
+</html>
